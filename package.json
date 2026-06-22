@@ -1,0 +1,61 @@
+{
+  "name": "markpad",
+  "version": "1.0.0",
+  "description": "MarkPad — 本地 Markdown 桌面编辑器",
+  "main": "main.js",
+  "author": "Chloe",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.chloe.markpad",
+    "productName": "MarkPad",
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "fileAssociations": [
+      {
+        "ext": "md",
+        "name": "Markdown Document",
+        "role": "Editor"
+      },
+      {
+        "ext": "markdown",
+        "name": "Markdown Document",
+        "role": "Editor"
+      }
+    ]
+  },
+  "devDependencies": {
+    "electron": "^40.9.3",
+    "electron-builder": "^25.0.0",
+    "esbuild": "^0.28.1"
+  },
+  "dependencies": {
+    "@highlightjs/cdn-assets": "^11.11.1",
+    "@toast-ui/editor": "^3.2.2",
+    "dompurify": "^3.1.6",
+    "highlight.js": "^11.11.1",
+    "katex": "^0.16.47",
+    "marked": "^14.1.2"
+  }
+}

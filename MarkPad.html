@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MarkPad · 本地 Markdown 编辑器</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+<style>
+  :root{
+    --bg:#ffffff; --fg:#2b2b2b; --muted:#9aa0a6; --border:#ececec;
+    --accent:#4c6ef5; --toolbar:#fafafa; --code-bg:#f6f8fa; --sel:#dbe4ff;
+  }
+  [data-theme="dark"]{
+    --bg:#1e1e1e; --fg:#dcdcdc; --muted:#777; --border:#333;
+    --accent:#7c93ff; --toolbar:#252526; --code-bg:#2a2a2a; --sel:#33415e;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+  body{display:flex;flex-direction:column;background:var(--bg);color:var(--fg)}
+
+  /* Toolbar */
+  .toolbar{display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--toolbar);
+    border-bottom:1px solid var(--border);flex-shrink:0;user-select:none}
+  .toolbar .title{font-weight:600;font-size:14px;margin-right:8px}
+  .toolbar .spacer{flex:1}
+  button.tb{border:1px solid var(--border);background:var(--bg);color:var(--fg);
+    padding:5px 11px;border-radius:6px;cursor:pointer;font-size:13px;transition:.15s}
+  button.tb:hover{border-color:var(--accent);color:var(--accent)}
+  button.tb.icon{padding:5px 9px;font-size:15px}
+  .filename{font-size:13px;color:var(--muted);margin-left:6px}
+  .filename.dirty::after{content:" ●";color:var(--accent)}
+
+  /* Main */
+  .main{flex:1;display:flex;overflow:hidden}
+  .pane{flex:1;overflow:auto;height:100%}
+  #editor{width:100%;height:100%;border:0;outline:0;resize:none;padding:32px 40px;
+    font-family:"SF Mono",Menlo,Consolas,monospace;font-size:15px;line-height:1.7;
+    background:var(--bg);color:var(--fg);tab-size:2}
+  #editor::selection{background:var(--sel)}
+  .divider{width:1px;background:var(--border);flex-shrink:0}
+  #preview{padding:32px 48px;line-height:1.75;font-size:16px;max-width:none}
+
+  /* hide a pane based on view mode */
+  body[data-view="edit"] #preview-pane,body[data-view="edit"] .divider{display:none}
+  body[data-view="preview"] #editor-pane,body[data-view="preview"] .divider{display:none}
+
+  /* Markdown preview styling */
+  #preview h1,#preview h2{border-bottom:1px solid var(--border);padding-bottom:.3em}
+  #preview h1{font-size:1.9em} #preview h2{font-size:1.5em}
+  #preview h3{font-size:1.25em}
+  #preview code{background:var(--code-bg);padding:.2em .4em;border-radius:4px;font-size:.9em;
+    font-family:"SF Mono",Menlo,Consolas,monospace}
+  #preview pre{background:var(--code-bg);padding:14px 16px;border-radius:8px;overflow:auto}
+  #preview pre code{background:none;padding:0}
+  #preview blockquote{margin:0;padding:.3em 1em;border-left:4px solid var(--accent);color:var(--muted)}
+  #preview table{border-collapse:collapse;width:100%}
+  #preview th,#preview td{border:1px solid var(--border);padding:6px 12px}
+  #preview img{max-width:100%}
+  #preview a{color:var(--accent)}
+  #preview hr{border:0;border-top:1px solid var(--border)}
+
+  .status{display:flex;gap:16px;padding:4px 14px;font-size:12px;color:var(--muted);
+    background:var(--toolbar);border-top:1px solid var(--border);flex-shrink:0}
+  .hint{position:fixed;bottom:36px;left:50%;transform:translateX(-50%);
+    background:var(--accent);color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;
+    opacity:0;transition:.3s;pointer-events:none}
+  .hint.show{opacity:1}
+</style>
+</head>
+<body data-view="split">
+  <div class="toolbar">
+    <span class="title">📝 MarkPad</span>
+    <button class="tb" id="btn-new">新建</button>
+    <button class="tb" id="btn-open">打开</button>
+    <button class="tb" id="btn-save">保存</button>
+    <button class="tb" id="btn-saveas">另存为</button>
+    <span class="filename" id="filename">未命名.md</span>
+    <span class="spacer"></span>
+    <button class="tb icon" id="btn-edit" title="仅编辑">✏️</button>
+    <button class="tb icon" id="btn-split" title="分屏">🔀</button>
+    <button class="tb icon" id="btn-preview" title="仅预览">👁️</button>
+    <button class="tb icon" id="btn-theme" title="切换主题">🌙</button>
+  </div>
+
+  <div class="main">
+    <div class="pane" id="editor-pane">
+      <textarea id="editor" spellcheck="false" placeholder="在此输入 Markdown…&#10;&#10;⌘/Ctrl+S 保存 · ⌘/Ctrl+O 打开"></textarea>
+    </div>
+    <div class="divider"></div>
+    <div class="pane" id="preview-pane">
+      <div id="preview"></div>
+    </div>
+  </div>
+
+  <div class="status">
+    <span id="stat-words">0 字</span>
+    <span id="stat-chars">0 字符</span>
+    <span id="stat-lines">1 行</span>
+    <span class="spacer" style="flex:1"></span>
+    <span id="stat-mode">分屏模式</span>
+  </div>
+
+  <div class="hint" id="hint"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const editor = $('#editor'), preview = $('#preview');
+let fileHandle = null;        // File System Access handle
+let dirty = false;
+let curName = '未命名.md';
+const supportsFS = 'showOpenFilePicker' in window;
+
+marked.setOptions({ gfm:true, breaks:true });
+
+function render(){
+  preview.innerHTML = DOMPurify.sanitize(marked.parse(editor.value || ''));
+}
+function updateStats(){
+  const t = editor.value;
+  const words = (t.trim().match(/[一-龥]|[a-zA-Z0-9_]+/g) || []).length;
+  $('#stat-words').textContent = words + ' 字';
+  $('#stat-chars').textContent = t.length + ' 字符';
+  $('#stat-lines').textContent = (t.split('\n').length) + ' 行';
+}
+function markDirty(d){
+  dirty = d;
+  $('#filename').classList.toggle('dirty', d);
+}
+function setName(n){ curName = n; $('#filename').textContent = n; }
+
+function toast(msg){
+  const h = $('#hint'); h.textContent = msg; h.classList.add('show');
+  clearTimeout(h._t); h._t = setTimeout(()=>h.classList.remove('show'), 1600);
+}
+
+editor.addEventListener('input', ()=>{ render(); updateStats(); markDirty(true); });
+
+// Tab inserts two spaces
+editor.addEventListener('keydown', e=>{
+  if(e.key === 'Tab'){
+    e.preventDefault();
+    const s = editor.selectionStart, en = editor.selectionEnd;
+    editor.setRangeText('  ', s, en, 'end');
+    render(); markDirty(true);
+  }
+});
+
+/* ---------- File operations ---------- */
+async function newFile(){
+  if(dirty && !confirm('当前文档未保存，确定新建？')) return;
+  editor.value=''; fileHandle=null; setName('未命名.md');
+  render(); updateStats(); markDirty(false);
+}
+
+async function openFile(){
+  if(dirty && !confirm('当前文档未保存，确定打开新文件？')) return;
+  if(supportsFS){
+    try{
+      const [h] = await window.showOpenFilePicker({
+        types:[{description:'Markdown / 文本',accept:{'text/markdown':['.md','.markdown','.txt']}}]
+      });
+      fileHandle = h;
+      const file = await h.getFile();
+      editor.value = await file.text();
+      setName(file.name); render(); updateStats(); markDirty(false);
+      toast('已打开 '+file.name);
+    }catch(e){ if(e.name!=='AbortError') alert('打开失败：'+e.message); }
+  } else { fallbackOpen.click(); }
+}
+
+async function saveFile(){
+  if(supportsFS){
+    try{
+      if(!fileHandle){ return saveAs(); }
+      const w = await fileHandle.createWritable();
+      await w.write(editor.value); await w.close();
+      markDirty(false); toast('已保存');
+    }catch(e){ alert('保存失败：'+e.message); }
+  } else { downloadFile(); }
+}
+
+async function saveAs(){
+  if(supportsFS){
+    try{
+      const h = await window.showSaveFilePicker({
+        suggestedName: curName,
+        types:[{description:'Markdown',accept:{'text/markdown':['.md']}}]
+      });
+      fileHandle = h; setName(h.name);
+      const w = await h.createWritable();
+      await w.write(editor.value); await w.close();
+      markDirty(false); toast('已保存 '+h.name);
+    }catch(e){ if(e.name!=='AbortError') alert('保存失败：'+e.message); }
+  } else { downloadFile(); }
+}
+
+/* Fallback for browsers without File System Access API */
+function downloadFile(){
+  const blob = new Blob([editor.value], {type:'text/markdown'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = curName;
+  a.click(); URL.revokeObjectURL(a.href); markDirty(false);
+  toast('已下载 '+curName);
+}
+const fallbackOpen = document.createElement('input');
+fallbackOpen.type='file'; fallbackOpen.accept='.md,.markdown,.txt';
+fallbackOpen.onchange = async ()=>{
+  const f = fallbackOpen.files[0]; if(!f) return;
+  editor.value = await f.text(); setName(f.name);
+  render(); updateStats(); markDirty(false);
+};
+
+/* ---------- View modes ---------- */
+function setView(v){
+  document.body.dataset.view = v;
+  const labels={edit:'编辑模式',split:'分屏模式',preview:'预览模式'};
+  $('#stat-mode').textContent = labels[v];
+}
+
+/* ---------- Theme ---------- */
+function toggleTheme(){
+  const cur = document.documentElement.dataset.theme;
+  const next = cur==='dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  $('#btn-theme').textContent = next==='dark' ? '☀️' : '🌙';
+  localStorage.setItem('markpad-theme', next);
+}
+if(localStorage.getItem('markpad-theme')==='dark') toggleTheme();
+
+/* ---------- Wire up ---------- */
+$('#btn-new').onclick = newFile;
+$('#btn-open').onclick = openFile;
+$('#btn-save').onclick = saveFile;
+$('#btn-saveas').onclick = saveAs;
+$('#btn-edit').onclick = ()=>setView('edit');
+$('#btn-split').onclick = ()=>setView('split');
+$('#btn-preview').onclick = ()=>setView('preview');
+$('#btn-theme').onclick = toggleTheme;
+
+document.addEventListener('keydown', e=>{
+  const mod = e.metaKey || e.ctrlKey;
+  if(!mod) return;
+  if(e.key==='s'){ e.preventDefault(); e.shiftKey ? saveAs() : saveFile(); }
+  else if(e.key==='o'){ e.preventDefault(); openFile(); }
+  else if(e.key==='n'){ e.preventDefault(); newFile(); }
+});
+
+window.addEventListener('beforeunload', e=>{
+  if(dirty){ e.preventDefault(); e.returnValue=''; }
+});
+
+// Sync scroll: editor -> preview (split mode)
+$('#editor-pane').addEventListener('scroll', ()=>{
+  if(document.body.dataset.view!=='split') return;
+  const ep=$('#editor-pane'), pp=$('#preview-pane');
+  const r = ep.scrollTop/(ep.scrollHeight-ep.clientHeight || 1);
+  pp.scrollTop = r*(pp.scrollHeight-pp.clientHeight);
+});
+
+// Seed sample
+editor.value = `# 欢迎使用 MarkPad
+
+一个零依赖、可直接读写**本地文件**的 Markdown 编辑器。
+
+## 功能
+- 实时预览，左右分屏
+- 直接打开 / 保存本地 \`.md\` 文件（Chrome / Edge）
+- 深色模式、字数统计
+- 快捷键：⌘/Ctrl+S 保存，⌘/Ctrl+O 打开，⌘/Ctrl+N 新建
+
+> 点击「打开」选择本地文档，或直接在左侧开始写作。
+
+\`\`\`js
+console.log("Hello, MarkPad");
+\`\`\`
+`;
+render(); updateStats();
+if(!supportsFS){
+  toast('当前浏览器用下载方式保存，建议用 Chrome/Edge 获得直接读写');
+}
+</script>
+</body>
+</html>
