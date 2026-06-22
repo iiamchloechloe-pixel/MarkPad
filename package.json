@@ -46,6 +46,7 @@
     ]
   },
   "devDependencies": {
+    "@electron/universal": "^3.0.4",
     "electron": "^40.9.3",
     "electron-builder": "^25.0.0",
     "esbuild": "^0.28.1"

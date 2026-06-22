@@ -4,7 +4,8 @@
 set -e
 cd "$(dirname "$0")/.."
 
-SRC=node_modules/electron/dist/Electron.app
+# Override SRC_APP to build for a different arch (e.g. an unzipped arm64 Electron.app)
+SRC=${SRC_APP:-node_modules/electron/dist/Electron.app}
 APP=dist/MarkPad.app
 PB=/usr/libexec/PlistBuddy
 
