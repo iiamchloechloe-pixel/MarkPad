@@ -1,6 +1,6 @@
 # MarkPad
 
-一个对标 **Typora** 的本地 Markdown 桌面编辑器，基于 Electron。所见即所得编辑，文件以 `.md` 保存。
+所见即所得的 markdown 编辑器。
 
 ## 下载安装（macOS）
 
