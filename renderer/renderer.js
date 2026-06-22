@@ -345,36 +345,48 @@ function setSidebarTab(tab) {
   $('#outline-panel').hidden = tab !== 'outline';
 }
 
+/* ---- Appearance (light/dark) — only affects the 默认 theme ---- */
 let appearance = localStorage.getItem('markpad-appearance') || 'system';
 const darkMQ = window.matchMedia('(prefers-color-scheme: dark)');
-function isDark() { return appearance === 'dark' || (appearance === 'system' && darkMQ.matches); }
-function applyAppearance() {
-  const dark = isDark();
-  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-  if (tuiRoot) tuiRoot.classList.toggle('toastui-editor-dark', dark);
-  $('#btn-theme').classList.toggle('active', appearance !== 'system');
-  $('#btn-theme').title = appearance === 'system' ? '外观：跟随系统（点击切换）'
-    : (dark ? '外观：深色（点击切换）' : '外观：浅色（点击切换）');
-}
 function setAppearance(mode) {
-  appearance = mode; localStorage.setItem('markpad-appearance', mode); applyAppearance();
+  appearance = mode; localStorage.setItem('markpad-appearance', mode); applyTheme();
   toast({ system: '外观：跟随系统', light: '外观：浅色', dark: '外观：深色' }[mode]);
 }
 function cycleAppearance() { setAppearance({ system: 'light', light: 'dark', dark: 'system' }[appearance]); }
-darkMQ.addEventListener('change', () => { if (appearance === 'system') applyAppearance(); });
+darkMQ.addEventListener('change', () => { if (appearance === 'system' && skin === 'default') applyTheme(); });
 
-/* ---- Editor skin: default / typewriter ---- */
-let skin = localStorage.getItem('markpad-skin') || 'default';
-function applySkin() {
-  document.documentElement.dataset.skin = skin === 'typewriter' ? 'typewriter' : '';
-  $('#btn-skin').classList.toggle('active', skin === 'typewriter');
-  $('#btn-skin').title = skin === 'typewriter' ? '编辑器主题：打字机' : '编辑器主题：默认';
+/* ---- Editor themes (readable presets) ---- */
+const SKINS = ['default', 'eyecare', 'sepia', 'typewriter', 'night'];
+const SKIN_LABEL = { default: '默认', eyecare: '护眼', sepia: '棕褐', typewriter: '打字机', night: '夜读' };
+const DARK_SKINS = new Set(['night']);          // these are dark-based palettes
+let skin = SKINS.includes(localStorage.getItem('markpad-skin')) ? localStorage.getItem('markpad-skin') : 'default';
+
+function effectiveDark() {
+  if (DARK_SKINS.has(skin)) return true;
+  if (skin !== 'default') return false;          // named light skins
+  return appearance === 'dark' || (appearance === 'system' && darkMQ.matches);
 }
-function toggleSkin() {
-  skin = skin === 'typewriter' ? 'default' : 'typewriter';
-  localStorage.setItem('markpad-skin', skin); applySkin();
-  toast(skin === 'typewriter' ? '已切换为打字机主题' : '已切换为默认主题');
+function applyTheme() {
+  const dark = effectiveDark();
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  if (skin === 'default') delete document.documentElement.dataset.skin;
+  else document.documentElement.dataset.skin = skin;
+  if (tuiRoot) tuiRoot.classList.toggle('toastui-editor-dark', dark);
+  // toolbar buttons
+  $('#btn-theme').classList.toggle('active', appearance !== 'system');
+  $('#btn-theme').title = appearance === 'system' ? '外观：跟随系统（点击切换）'
+    : (dark ? '外观：深色（点击切换）' : '外观：浅色（点击切换）');
+  $('#btn-skin').classList.toggle('active', skin !== 'default');
+  $('#btn-skin').title = '编辑器主题：' + SKIN_LABEL[skin] + '（点击切换）';
 }
+const applyAppearance = applyTheme;   // back-compat alias used at init
+function applySkin() { applyTheme(); }
+function setSkin(name) {
+  if (!SKINS.includes(name)) return;
+  skin = name; localStorage.setItem('markpad-skin', name); applyTheme();
+  toast('主题：' + SKIN_LABEL[name]);
+}
+function cycleSkin() { setSkin(SKINS[(SKINS.indexOf(skin) + 1) % SKINS.length]); }
 
 /* ============================================================
    Find / Replace (native findInPage + markdown-level replace)
@@ -441,7 +453,7 @@ $('#btn-open').onclick = open;
 $('#btn-save').onclick = save;
 $('#btn-mode').onclick = toggleMode;
 $('#btn-theme').onclick = cycleAppearance;
-$('#btn-skin').onclick = toggleSkin;
+$('#btn-skin').onclick = cycleSkin;
 $('#btn-find').onclick = openFind;
 $('#btn-toggle-sidebar').onclick = toggleSidebar;
 $('#btn-open-folder').onclick = openFolder;
@@ -476,7 +488,7 @@ window.api.onMenu('exportPdf', exportPdf);
 window.api.onMenu('theme', cycleAppearance);
 window.api.onMenu('appearance', m => setAppearance(m));
 window.api.onMenu('mode', toggleMode);
-window.api.onMenu('skin', toggleSkin);
+window.api.onMenu('skin', m => (typeof m === 'string' && SKINS.includes(m)) ? setSkin(m) : cycleSkin());
 window.api.onMenu('find', openFind);
 window.api.onMenu('sidebar', toggleSidebar);
 window.api.onMenu('sidebarTab', setSidebarTab);

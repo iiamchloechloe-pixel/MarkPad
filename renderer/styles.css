@@ -137,50 +137,57 @@ body[data-typewriter="on"] #editor{padding-top:42vh;padding-bottom:42vh}
   opacity:0;transition:.3s;pointer-events:none;z-index:50}
 .hint.show{opacity:1}
 
-/* ---------- Typewriter editor theme ---------- */
+/* ============ Readable editor themes (data-skin) ============ */
+/* 护眼绿 */
+[data-skin="eyecare"]{
+  --bg:#e7efe2; --fg:#2f3a2b; --muted:#7a8a73; --border:#cdd9c5; --code-bg:#dde8d6;
+  --toolbar:#e1ebdb; --side:#dde8d6; --hover:#d4e1cb; --active:#cfe0c4; --sel:#cfe0be;
+  --accent:#4a7c52; --scroll:rgba(47,58,43,.22); --scroll-hover:rgba(47,58,43,.38);
+  --ed-font:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+}
+/* 棕褐 / 羊皮纸 */
+[data-skin="sepia"]{
+  --bg:#f4ecd8; --fg:#5b4636; --muted:#a08a6f; --border:#e3d8bf; --code-bg:#ece0c6;
+  --toolbar:#efe6cf; --side:#ece2c8; --hover:#e6d9bc; --active:#e7d8b4; --sel:#e3d2a6;
+  --accent:#9a6a3a; --scroll:rgba(91,70,54,.22); --scroll-hover:rgba(91,70,54,.4);
+  --ed-font:Georgia,"Times New Roman","Songti SC",serif;
+}
+/* 打字机 */
 [data-skin="typewriter"]{
-  --bg:#f4efe4; --fg:#3a3329; --border:#e0d8c6; --code-bg:#ebe4d4;
+  --bg:#f4efe4; --fg:#3a3329; --muted:#9c8f78; --border:#e0d8c6; --code-bg:#ebe4d4;
   --toolbar:#efe8d8; --side:#ece4d2; --hover:#e4dcc8; --active:#e6dcc0; --sel:#dfd2ad;
+  --accent:#8a6d3b; --scroll:rgba(58,51,41,.22); --scroll-hover:rgba(58,51,41,.4);
+  --ed-font:Georgia,"Times New Roman","Songti SC",serif;
 }
-[data-skin="typewriter"][data-theme="dark"],
-[data-skin="typewriter"] [data-theme="dark"]{
-  --bg:#23211c; --fg:#d8cfbd; --border:#3a352c; --code-bg:#2c2922;
-  --toolbar:#27241e; --side:#221f1a; --hover:#312d25; --active:#3a352a; --sel:#4a4231;
+/* 夜读（暖暗，低对比，适合长时间） */
+[data-skin="night"]{
+  --bg:#1d1c19; --fg:#cfc8b8; --muted:#857d6c; --border:#34322c; --code-bg:#2a2823;
+  --toolbar:#232220; --side:#1f1e1b; --hover:#2e2c27; --active:#38352c; --sel:#4a4636;
+  --accent:#c8a86a; --scroll:rgba(255,255,255,.18); --scroll-hover:rgba(255,255,255,.34);
+  --ed-font:Georgia,"Songti SC","PingFang SC",serif;
 }
-/* paper-like editing surface + serif/mono fonts on the Toast UI contents */
-[data-skin="typewriter"] .toastui-editor-defaultUI,
-[data-skin="typewriter"] .toastui-editor-main,
-[data-skin="typewriter"] .toastui-editor-ww-container,
-[data-skin="typewriter"] .toastui-editor-md-container,
-[data-skin="typewriter"] .toastui-editor-md-container .toastui-editor{
-  background:var(--bg) !important;
-}
-[data-skin="typewriter"] .toastui-editor-contents{
-  font-family:Georgia,"Times New Roman","Songti SC",serif !important;
-  font-size:17px; line-height:1.9; color:var(--fg);
-}
+
+/* shared: paint the Toast UI surfaces from the active theme's vars */
+[data-skin] .toastui-editor-defaultUI{ border-color:var(--border) !important; }
+[data-skin] .toastui-editor-defaultUI-toolbar{ background:var(--toolbar) !important; border-bottom:1px solid var(--border) !important; }
+[data-skin] .toastui-editor-main,
+[data-skin] .toastui-editor-ww-container,
+[data-skin] .toastui-editor-md-container,
+[data-skin] .toastui-editor-md-container .toastui-editor{ background:var(--bg) !important; }
+[data-skin] .toastui-editor-contents{ color:var(--fg); font-family:var(--ed-font) !important; font-size:16px; line-height:1.85; }
+[data-skin] .toastui-editor-md-container .toastui-editor .ProseMirror{ color:var(--fg); font-family:var(--ed-font) !important; }
+[data-skin] .toastui-editor-toolbar-divider{ background-color:var(--border) !important; }
+[data-skin] .toastui-editor-toolbar-icons{ border-color:transparent !important; }
+[data-skin] .toastui-editor-toolbar-icons:not(:disabled):hover{ background-color:var(--hover) !important; border-color:var(--border) !important; }
+[data-skin] .toastui-editor-md-tab-container,
+[data-skin] .toastui-editor-mode-switch{ background:var(--toolbar) !important; border-color:var(--border) !important; }
+
+/* 打字机：等宽标题与源码 */
 [data-skin="typewriter"] .toastui-editor-contents h1,
 [data-skin="typewriter"] .toastui-editor-contents h2,
 [data-skin="typewriter"] .toastui-editor-contents h3,
-[data-skin="typewriter"] .toastui-editor-md-mode .toastui-editor-contents{
-  font-family:"Courier New","Courier",ui-monospace,monospace !important; letter-spacing:.3px;
-}
 [data-skin="typewriter"] .toastui-editor-md-container .toastui-editor .ProseMirror{
-  font-family:"Courier New","Courier",ui-monospace,monospace !important;
-}
-/* match the Toast UI toolbar to the paper theme */
-[data-skin="typewriter"] .toastui-editor-defaultUI{ border-color:var(--border) !important; }
-[data-skin="typewriter"] .toastui-editor-defaultUI-toolbar{
-  background:var(--toolbar) !important; border-bottom:1px solid var(--border) !important;
-}
-[data-skin="typewriter"] .toastui-editor-toolbar-divider{ background-color:var(--border) !important; }
-[data-skin="typewriter"] .toastui-editor-toolbar-icons{ border-color:transparent !important; }
-[data-skin="typewriter"] .toastui-editor-toolbar-icons:not(:disabled):hover{
-  background-color:var(--hover) !important; border-color:var(--border) !important;
-}
-[data-skin="typewriter"] .toastui-editor-md-tab-container,
-[data-skin="typewriter"] .toastui-editor-mode-switch{
-  background:var(--toolbar) !important; border-color:var(--border) !important;
+  font-family:"Courier New","Courier",ui-monospace,monospace !important; letter-spacing:.3px;
 }
 
 /* KaTeX math widget spacing */

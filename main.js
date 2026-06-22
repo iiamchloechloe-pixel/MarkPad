@@ -297,7 +297,18 @@ function buildMenu() {
       submenu: [
         { label: '切换源码 / 所见即所得', accelerator: 'CmdOrCtrl+/', click: send('menu:mode') },
         { label: '查找 / 替换', accelerator: 'CmdOrCtrl+F', click: send('menu:find') },
-        { label: '打字机主题（切换）', accelerator: 'CmdOrCtrl+Shift+P', click: send('menu:skin') },
+        {
+          label: '编辑器主题',
+          submenu: [
+            { label: '默认', click: () => mainWindow.webContents.send('menu:skin', 'default') },
+            { label: '护眼', click: () => mainWindow.webContents.send('menu:skin', 'eyecare') },
+            { label: '棕褐', click: () => mainWindow.webContents.send('menu:skin', 'sepia') },
+            { label: '打字机', click: () => mainWindow.webContents.send('menu:skin', 'typewriter') },
+            { label: '夜读', click: () => mainWindow.webContents.send('menu:skin', 'night') },
+            { type: 'separator' },
+            { label: '切换下一个主题', accelerator: 'CmdOrCtrl+Shift+P', click: send('menu:skin') },
+          ],
+        },
         { type: 'separator' },
         { label: '切换侧栏', accelerator: 'CmdOrCtrl+\\', click: send('menu:sidebar') },
         { label: '大纲', click: () => mainWindow.webContents.send('menu:sidebarTab', 'outline') },
