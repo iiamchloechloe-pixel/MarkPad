@@ -1,6 +1,15 @@
 # MarkPad
 
-一个对标 **Typora** 的本地 Markdown 桌面编辑器，基于 Electron。
+一个对标 **Typora** 的本地 Markdown 桌面编辑器，基于 Electron。所见即所得编辑，文件以 `.md` 保存。
+
+## 下载安装（macOS）
+
+前往 [**Releases**](https://github.com/iiamchloechloe-pixel/MarkPad/releases/latest) 下载 `MarkPad-1.0.0-mac-x64.zip`：
+
+1. 解压得到 `MarkPad.app`，拖入「应用程序」。
+2. **首次打开**：右键点 App →「打开」，弹窗里再点「打开」。
+   （未经 Apple 公证，故首次需手动允许；或终端执行 `xattr -dr com.apple.quarantine /Applications/MarkPad.app`）
+3. Apple Silicon 首次运行会提示安装 Rosetta，点「安装」即可（本版为 x64 构建）。
 
 ## 运行
 
