@@ -4,14 +4,10 @@
 
 ## 下载安装（macOS）
 
-前往 [**Releases**](https://github.com/iiamchloechloe-pixel/MarkPad/releases/latest) 按你的芯片下载：
+前往 [**Releases**](https://github.com/iiamchloechloe-pixel/MarkPad/releases/latest) 下载：
 
-| 你的 Mac | 下载文件 |
-|----------|----------|
-| **Apple Silicon**（M1/M2/M3/M4） | `MarkPad-1.0.0-mac-arm64.zip` |
-| **Intel** | `MarkPad-1.0.0-mac-x64.zip` |
-
-> 不确定芯片？点左上角  → 关于本机，看「芯片 / 处理器」。
+- **`MarkPad-1.0.0-mac-universal.zip`** —— 通用版，**Intel 和 Apple Silicon 都能用**（推荐，下这个就行）
+- 想要体积更小的单架构包，也可选 `...-arm64.zip`（Apple Silicon）或 `...-x64.zip`（Intel）
 
 1. 解压得到 `MarkPad.app`，拖入「应用程序」。
 2. **首次打开**：右键点 App →「打开」，弹窗里再点「打开」。
