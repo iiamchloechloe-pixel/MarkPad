@@ -388,6 +388,27 @@ function setSkin(name) {
 }
 function cycleSkin() { setSkin(SKINS[(SKINS.indexOf(skin) + 1) % SKINS.length]); }
 
+// Dropdown under the 🅰 button to pick a theme directly
+let themeMenu = null;
+function closeThemeMenu() { if (themeMenu) { themeMenu.remove(); themeMenu = null; } }
+function showSkinMenu() {
+  if (themeMenu) { closeThemeMenu(); return; }   // toggle
+  themeMenu = document.createElement('div');
+  themeMenu.className = 'ctx-menu theme-menu';
+  SKINS.forEach(s => {
+    const mi = document.createElement('div');
+    mi.className = 'ctx-item' + (s === skin ? ' on' : '');
+    mi.textContent = (s === skin ? '✓ ' : '   ') + SKIN_LABEL[s];
+    mi.onclick = () => { closeThemeMenu(); setSkin(s); };
+    themeMenu.appendChild(mi);
+  });
+  document.body.appendChild(themeMenu);
+  const r = $('#btn-skin').getBoundingClientRect();
+  themeMenu.style.left = Math.min(r.left, window.innerWidth - themeMenu.offsetWidth - 8) + 'px';
+  themeMenu.style.top = (r.bottom + 4) + 'px';
+}
+document.addEventListener('click', closeThemeMenu);
+
 /* ============================================================
    Find / Replace (native findInPage + markdown-level replace)
    ============================================================ */
@@ -453,7 +474,7 @@ $('#btn-open').onclick = open;
 $('#btn-save').onclick = save;
 $('#btn-mode').onclick = toggleMode;
 $('#btn-theme').onclick = cycleAppearance;
-$('#btn-skin').onclick = cycleSkin;
+$('#btn-skin').onclick = e => { e.stopPropagation(); showSkinMenu(); };
 $('#btn-find').onclick = openFind;
 $('#btn-toggle-sidebar').onclick = toggleSidebar;
 $('#btn-open-folder').onclick = openFolder;

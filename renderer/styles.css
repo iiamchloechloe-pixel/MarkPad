@@ -207,6 +207,9 @@ div.math-widget{display:block;text-align:center;margin:.4em 0;overflow-x:auto}
   box-shadow:0 6px 24px rgba(0,0,0,.22);user-select:none}
 .ctx-item{padding:6px 12px;border-radius:5px;font-size:13px;color:var(--fg);cursor:pointer}
 .ctx-item:hover{background:var(--accent);color:#fff}
+.ctx-item.on{color:var(--accent);font-weight:600}
+.ctx-item.on:hover{color:#fff}
+.theme-menu{min-width:140px;white-space:pre}
 
 /* drag-over highlight */
 body.dragging::after{content:"松开以打开文件";position:fixed;inset:0;background:rgba(76,110,245,.12);
