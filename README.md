@@ -95,10 +95,7 @@ sudo rm -rf /Library/Caches/com.apple.iconservices.store && killall Dock
 
 ## 技术说明
 
-- 渲染：marked + DOMPurify（防 XSS）+ highlight.js + KaTeX
-- 安全：`contextIsolation` 开启，`nodeIntegration` 关闭，预加载脚本经 IPC 桥接磁盘操作
-- 当前依赖的 Electron 为 x64 构建，在 Apple Silicon 上通过 Rosetta 运行（网络受限时无法下载 arm64 原生版）
-
-## 真正的 WYSIWYG（待办）
-
-Typora 最核心的「源码即所见」内联编辑（输入时隐藏标记符号）尚未实现，目前为分屏式实时预览。这是后续可做的最大单项。
+- 编辑器引擎：**Toast UI Editor**（所见即所得，直接存储 markdown），用 esbuild 打成离线 bundle
+- 渲染辅助：KaTeX（数学公式）、marked + DOMPurify（导出 HTML / PDF）
+- 安全：`contextIsolation` 开启，`nodeIntegration` 关闭，磁盘操作经 preload 的 IPC 桥接
+- 打包：**通用二进制**（Intel + Apple Silicon），见 `build/make-universal.js`
