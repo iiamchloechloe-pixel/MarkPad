@@ -4,12 +4,18 @@
 
 ## 下载安装（macOS）
 
-前往 [**Releases**](https://github.com/iiamchloechloe-pixel/MarkPad/releases/latest) 下载 `MarkPad-1.0.0-mac-x64.zip`：
+前往 [**Releases**](https://github.com/iiamchloechloe-pixel/MarkPad/releases/latest) 按你的芯片下载：
+
+| 你的 Mac | 下载文件 |
+|----------|----------|
+| **Apple Silicon**（M1/M2/M3/M4） | `MarkPad-1.0.0-mac-arm64.zip` |
+| **Intel** | `MarkPad-1.0.0-mac-x64.zip` |
+
+> 不确定芯片？点左上角  → 关于本机，看「芯片 / 处理器」。
 
 1. 解压得到 `MarkPad.app`，拖入「应用程序」。
 2. **首次打开**：右键点 App →「打开」，弹窗里再点「打开」。
    （未经 Apple 公证，故首次需手动允许；或终端执行 `xattr -dr com.apple.quarantine /Applications/MarkPad.app`）
-3. Apple Silicon 首次运行会提示安装 Rosetta，点「安装」即可（本版为 x64 构建）。
 
 ## 运行
 
