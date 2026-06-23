@@ -6,7 +6,7 @@
 
 前往 [**Releases**](https://github.com/iiamchloechloe-pixel/MarkPad/releases/latest) 下载：
 
-- **`MarkPad-1.0.0-mac-universal.zip`** —— 通用版，**Intel 和 Apple Silicon 都能用**（推荐，下这个就行）
+- **`MarkPad-1.1.0-mac-universal.zip`** —— 通用版，**Intel 和 Apple Silicon 都能用**（推荐，下这个就行）
 - 想要体积更小的单架构包，也可选 `...-arm64.zip`（Apple Silicon）或 `...-x64.zip`（Intel）
 
 1. 解压得到 `MarkPad.app`，拖入「应用程序」。

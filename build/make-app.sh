@@ -8,6 +8,7 @@ cd "$(dirname "$0")/.."
 SRC=${SRC_APP:-node_modules/electron/dist/Electron.app}
 APP=dist/MarkPad.app
 PB=/usr/libexec/PlistBuddy
+VER=$(node -p "require('./package.json').version")
 
 [ -d "$SRC" ] || { echo "missing $SRC — run npm install first"; exit 1; }
 
@@ -27,8 +28,8 @@ $PB -c "Set :CFBundleIconFile icon" "$P"
 $PB -c "Set :CFBundleName MarkPad" "$P"
 $PB -c "Set :CFBundleIdentifier com.chloe.markpad" "$P"
 $PB -c "Add :CFBundleDisplayName string MarkPad" "$P" 2>/dev/null || $PB -c "Set :CFBundleDisplayName MarkPad" "$P"
-$PB -c "Set :CFBundleShortVersionString 1.0.0" "$P" 2>/dev/null || true
-$PB -c "Set :CFBundleVersion 1.0.0" "$P" 2>/dev/null || true
+$PB -c "Set :CFBundleShortVersionString $VER" "$P" 2>/dev/null || true
+$PB -c "Set :CFBundleVersion $VER" "$P" 2>/dev/null || true
 # Document types (.md / .markdown / .txt)
 $PB -c "Delete :CFBundleDocumentTypes" "$P" 2>/dev/null || true
 $PB -c "Add :CFBundleDocumentTypes array" "$P"
