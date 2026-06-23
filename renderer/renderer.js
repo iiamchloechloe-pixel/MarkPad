@@ -190,6 +190,7 @@ function dirName(p) { return p.replace(/[/\\][^/\\]+$/, ''); }
 
 function renderTree(res) {
   folderRoot = res.root;
+  localStorage.setItem('markpad-lastfolder', res.root);
   $('#folder-name').textContent = res.name;
   $('#folder-name').title = res.root;
   $('#btn-new-file').hidden = false;
@@ -514,6 +515,24 @@ window.api.onMenu('find', openFind);
 window.api.onMenu('sidebar', toggleSidebar);
 window.api.onMenu('sidebarTab', setSidebarTab);
 window.api.onFileOpened(({ filePath: p, content }) => loadContent(p, content));
+
+// Startup behaviour (welcome doc is already loaded as initialValue)
+window.api.onStartup(async ({ mode, folder }) => {
+  try {
+    if (mode === 'blank') {
+      editor.setMarkdown(''); setFile(null, '未命名.md');
+      updateStats(); buildOutline(); markDirty(false);
+    } else if (mode === 'restore') {
+      const lastDir = localStorage.getItem('markpad-lastfolder');
+      if (lastDir) { try { renderTree(await window.api.readFolder(lastDir)); } catch {} }
+      const lastFile = localStorage.getItem('markpad-lastfile');
+      if (lastFile) { try { loadContent(lastFile, await window.api.readFile(lastFile)); } catch {} }
+    } else if (mode === 'folder' && folder) {
+      try { renderTree(await window.api.readFolder(folder)); } catch {}
+    }
+    // 'welcome' → keep the welcome document already shown
+  } catch {}
+});
 
 document.addEventListener('keydown', e => {
   if (!(e.metaKey || e.ctrlKey)) return;

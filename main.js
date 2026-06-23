@@ -6,8 +6,29 @@ const path = require('path');
 let mainWindow = null;
 let pendingOpenPath = null;        // file queued before renderer is ready
 const RECENT_FILE = () => path.join(app.getPath('userData'), 'recent.json');
+const CONFIG_FILE = () => path.join(app.getPath('userData'), 'config.json');
 const MAX_RECENT = 10;
 let recent = [];
+
+// Startup behaviour: 'welcome' | 'blank' | 'restore' | 'folder'
+let startup = 'welcome';
+let startupFolder = '';
+function loadConfig() {
+  try {
+    const c = JSON.parse(fssync.readFileSync(CONFIG_FILE(), 'utf-8'));
+    startup = c.startup || 'welcome';
+    startupFolder = c.startupFolder || '';
+  } catch { startup = 'welcome'; startupFolder = ''; }
+}
+function saveConfig() {
+  try { fssync.writeFileSync(CONFIG_FILE(), JSON.stringify({ startup, startupFolder })); } catch {}
+}
+function setStartup(mode) { startup = mode; saveConfig(); buildMenu(); }
+async function chooseStartupFolder() {
+  const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, { properties: ['openDirectory'] });
+  if (canceled || !filePaths.length) { buildMenu(); return; }
+  startup = 'folder'; startupFolder = filePaths[0]; saveConfig(); buildMenu();
+}
 
 /* ---------- Recent files persistence ---------- */
 function loadRecent() {
@@ -43,6 +64,7 @@ function createWindow() {
   }
   mainWindow.webContents.on('did-finish-load', () => {
     if (pendingOpenPath) { openPathInRenderer(pendingOpenPath); pendingOpenPath = null; }
+    else mainWindow.webContents.send('startup', { mode: startup, folder: startupFolder });
   });
   mainWindow.webContents.on('found-in-page', (_e, result) => {
     mainWindow.webContents.send('found-in-page', result);
@@ -87,6 +109,7 @@ else {
       try { app.dock.setIcon(path.join(__dirname, 'icon.png')); } catch {}
     }
     loadRecent();
+    loadConfig();
     createWindow();
     buildMenu();
     handleFileArg(process.argv);
@@ -287,6 +310,16 @@ function buildMenu() {
         { type: 'separator' },
         { label: '导出 PDF…', click: send('menu:exportPdf') },
         { label: '导出 HTML…', click: send('menu:exportHtml') },
+        { type: 'separator' },
+        {
+          label: '启动时',
+          submenu: [
+            { type: 'radio', label: '显示欢迎文档', checked: startup === 'welcome', click: () => setStartup('welcome') },
+            { type: 'radio', label: '新建空白文档', checked: startup === 'blank', click: () => setStartup('blank') },
+            { type: 'radio', label: '恢复上次的文件和文件夹', checked: startup === 'restore', click: () => setStartup('restore') },
+            { type: 'radio', label: startupFolder ? `打开指定文件夹（${path.basename(startupFolder)}）…` : '打开指定文件夹…', checked: startup === 'folder', click: chooseStartupFolder },
+          ],
+        },
         { type: 'separator' },
         isMac ? { role: 'close', label: '关闭窗口' } : { role: 'quit', label: '退出' },
       ],

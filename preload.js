@@ -31,6 +31,8 @@ contextBridge.exposeInMainWorld('api', {
 
   // OS-initiated open
   onFileOpened: (cb) => ipcRenderer.on('file-opened', (_e, data) => cb(data)),
+  // Startup behaviour from main (welcome/blank/restore/folder)
+  onStartup: (cb) => ipcRenderer.on('startup', (_e, data) => cb(data)),
   // Native menu commands
   onMenu: (channel, cb) => ipcRenderer.on('menu:' + channel, (_e, arg) => cb(arg)),
 });
