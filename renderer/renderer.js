@@ -516,19 +516,28 @@ window.api.onMenu('sidebar', toggleSidebar);
 window.api.onMenu('sidebarTab', setSidebarTab);
 window.api.onFileOpened(({ filePath: p, content }) => loadContent(p, content));
 
-// Startup behaviour (welcome doc is already loaded as initialValue)
+function blankDoc() {
+  editor.setMarkdown(''); setFile(null, '未命名.md');
+  updateStats(); buildOutline(); markDirty(false);
+}
+// Startup behaviour (welcome doc is already loaded as initialValue).
+// Welcome doc only shows in 'welcome' mode; every other mode starts blank.
 window.api.onStartup(async ({ mode, folder }) => {
   try {
     if (mode === 'blank') {
-      editor.setMarkdown(''); setFile(null, '未命名.md');
-      updateStats(); buildOutline(); markDirty(false);
+      blankDoc();
     } else if (mode === 'restore') {
       const lastDir = localStorage.getItem('markpad-lastfolder');
       if (lastDir) { try { renderTree(await window.api.readFolder(lastDir)); } catch {} }
       const lastFile = localStorage.getItem('markpad-lastfile');
-      if (lastFile) { try { loadContent(lastFile, await window.api.readFile(lastFile)); } catch {} }
+      let loaded = false;
+      if (lastFile) {
+        try { loadContent(lastFile, await window.api.readFile(lastFile)); loaded = true; } catch {}
+      }
+      if (!loaded) blankDoc();          // no last file → blank, not welcome
     } else if (mode === 'folder' && folder) {
-      try { renderTree(await window.api.readFolder(folder)); } catch {}
+      blankDoc();                        // empty editor…
+      try { renderTree(await window.api.readFolder(folder)); } catch {}  // …with the folder's tree
     }
     // 'welcome' → keep the welcome document already shown
   } catch {}
