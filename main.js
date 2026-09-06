@@ -9,6 +9,8 @@ const RECENT_FILE = () => path.join(app.getPath('userData'), 'recent.json');
 const CONFIG_FILE = () => path.join(app.getPath('userData'), 'config.json');
 const MAX_RECENT = 10;
 let recent = [];
+ipcMain.handle('recent:list', () => recent);
+ipcMain.on('window:close', () => mainWindow?.close());
 
 // Startup behaviour: 'welcome' | 'blank' | 'restore' | 'folder'
 let startup = 'welcome';
@@ -302,6 +304,7 @@ function buildMenu() {
       submenu: [
         { label: '新建', accelerator: 'CmdOrCtrl+N', click: send('menu:new') },
         { label: '打开…', accelerator: 'CmdOrCtrl+O', click: send('menu:open') },
+        { label: '快速打开…', accelerator: 'CmdOrCtrl+P', click: send('menu:quick') },
         { label: '打开文件夹…', accelerator: 'CmdOrCtrl+Shift+O', click: send('menu:openFolder') },
         { label: '打开最近文件', submenu: recentSubmenu },
         { type: 'separator' },
@@ -328,6 +331,7 @@ function buildMenu() {
     {
       label: '视图',
       submenu: [
+        { label: '写作设置…', accelerator: 'CmdOrCtrl+,', click: send('menu:writing') },
         { label: '切换源码 / 所见即所得', accelerator: 'CmdOrCtrl+/', click: send('menu:mode') },
         { label: '查找 / 替换', accelerator: 'CmdOrCtrl+F', click: send('menu:find') },
         {
