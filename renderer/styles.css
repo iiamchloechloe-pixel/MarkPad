@@ -215,3 +215,23 @@ div.math-widget{display:block;text-align:center;margin:.4em 0;overflow-x:auto}
 body.dragging::after{content:"松开以打开文件";position:fixed;inset:0;background:rgba(76,110,245,.12);
   border:3px dashed var(--accent);display:flex;align-items:center;justify-content:center;
   font-size:18px;color:var(--accent);z-index:100;pointer-events:none}
+
+/* Writing preferences also apply to named themes. */
+#tui .toastui-editor-contents {font-size:var(--writing-size,16px) !important;line-height:var(--writing-line,1.8) !important;}
+#tui .toastui-editor-contents p {line-height:var(--writing-line,1.8) !important;}
+#tui .toastui-editor-ww-container .toastui-editor-contents,
+#tui .toastui-editor-md-preview .toastui-editor-contents {max-width:var(--writing-width,820px);margin:0 auto;}
+dialog {width:min(600px,90vw);border:1px solid var(--border);border-radius:12px;padding:24px;background:var(--bg);color:var(--fg);box-shadow:0 16px 70px #0004;}
+dialog::backdrop {background:#0005;}
+dialog h2 {margin:0 0 18px;font-size:19px;}
+dialog p,dialog small {color:var(--muted);font-size:12px;}
+dialog button {cursor:pointer;background:var(--toolbar);color:var(--fg);border:1px solid var(--border);border-radius:6px;padding:8px;}
+.dialog-close {float:right;}
+#quick-query {width:100%;padding:12px;font-size:16px;background:var(--bg);color:var(--fg);border:1px solid var(--border);border-radius:6px;}
+#quick-results {max-height:320px;overflow:auto;}
+.quick-result {display:block;width:100%;text-align:left;margin:4px 0;}
+.quick-result small {display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.quick-result.selected {background:var(--active);border-color:var(--accent);}
+#writing-dialog label {display:block;margin:20px 0;}
+#writing-dialog input {display:block;width:100%;margin-top:10px;}
+#writing-dialog output {float:right;}

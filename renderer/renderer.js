@@ -8,6 +8,11 @@ let filePath = null;       // absolute path of current file (null = unsaved)
 let curName = '未命名.md';
 let folderRoot = null;
 let dirty = false;
+let revision = 0;
+let loadingDocument = false;
+let savedMarkdown = null;
+let recoveryDraft = null;
+try { recoveryDraft = JSON.parse(localStorage.getItem('markpad-draft')); } catch {}
 
 const WELCOME = `# 欢迎使用 MarkPad
 
@@ -71,7 +76,7 @@ const editor = new toastui.Editor({
 });
 const tuiRoot = $('#tui .toastui-editor-defaultUI');
 
-editor.on('change', () => { markDirty(true); scheduleUpdate(); });
+editor.on('change', () => { revision++; markDirty(true); scheduleUpdate(); if (!loadingDocument) persistDraft(); });
 
 /* ---------- Stats / title / dirty ---------- */
 let updateTimer = null;
@@ -113,12 +118,16 @@ async function guard() {
   const c = await window.api.confirmUnsaved(curName);
   if (c === 'cancel') return false;
   if (c === 'save') return await save();
+  localStorage.removeItem('markpad-draft');
   return true;
 }
 async function newFile() {
   if (!(await guard())) return;
+  loadingDocument = true;
   editor.setMarkdown(''); setFile(null, '未命名.md');
+  loadingDocument = false; savedMarkdown = null;
   updateStats(); buildOutline(); markDirty(false); editor.focus();
+  persistDraft();
 }
 async function open() {
   if (!(await guard())) return;
@@ -126,18 +135,33 @@ async function open() {
   if (res) { loadContent(res.filePath, res.content); toast('已打开 ' + curName); }
 }
 function loadContent(p, content) {
+  loadingDocument = true;
   editor.setMarkdown(content); setFile(p);
+  loadingDocument = false;
+  savedMarkdown = content;
   updateStats(); buildOutline(); markDirty(false);
+  persistDraft();
 }
 async function save() {
   if (!filePath) return saveAs();
-  await window.api.saveFile(filePath, editor.getMarkdown());
-  markDirty(false); toast('已保存'); return true;
+  try {
+    const disk = await window.api.readFile(filePath);
+    if (savedMarkdown !== null && disk !== savedMarkdown) {
+      toast('文件已被外部修改，请另存副本'); return await saveAs();
+    }
+    const content = editor.getMarkdown(), version = revision;
+    await window.api.saveFile(filePath, content);
+    savedMarkdown = content;
+    markDirty(revision !== version); persistDraft(); toast('已保存'); return !dirty;
+  } catch (err) { toast('保存失败：' + err.message); return false; }
 }
 async function saveAs() {
-  const res = await window.api.saveAsDialog(editor.getMarkdown(), curName);
+  const content = editor.getMarkdown(), version = revision;
+  let res;
+  try { res = await window.api.saveAsDialog(content, curName); }
+  catch (err) { toast('保存失败：' + err.message); return false; }
   if (!res) return false;
-  setFile(res.filePath); markDirty(false); toast('已保存 ' + curName); return true;
+  setFile(res.filePath); savedMarkdown = content; markDirty(revision !== version); persistDraft(); toast('已保存 ' + curName); return !dirty;
 }
 async function restoreLastFile() {
   const last = localStorage.getItem('markpad-lastfile');
@@ -463,7 +487,8 @@ document.addEventListener('drop', async e => {
   const f = [...e.dataTransfer.files][0];
   if (f && /\.(md|markdown|txt)$/i.test(f.name)) {
     if (!(await guard())) return;
-    loadContent(f.path, await window.api.readFile(f.path));
+    const p = window.api.filePath(f);
+    loadContent(p, await window.api.readFile(p));
   }
 });
 
@@ -511,18 +536,21 @@ window.api.onMenu('theme', cycleAppearance);
 window.api.onMenu('appearance', m => setAppearance(m));
 window.api.onMenu('mode', toggleMode);
 window.api.onMenu('skin', m => (typeof m === 'string' && SKINS.includes(m)) ? setSkin(m) : cycleSkin());
-window.api.onMenu('find', openFind);
+window.api.onMenu('find', () => openFind());
 window.api.onMenu('sidebar', toggleSidebar);
 window.api.onMenu('sidebarTab', setSidebarTab);
-window.api.onFileOpened(({ filePath: p, content }) => loadContent(p, content));
+window.api.onFileOpened(async ({ filePath: p, content }) => { restoreDraft(); if (await guard()) loadContent(p, content); });
 
 function blankDoc() {
+  loadingDocument = true;
   editor.setMarkdown(''); setFile(null, '未命名.md');
+  loadingDocument = false; savedMarkdown = null;
   updateStats(); buildOutline(); markDirty(false);
 }
 // Startup behaviour (welcome doc is already loaded as initialValue).
 // Welcome doc only shows in 'welcome' mode; every other mode starts blank.
 window.api.onStartup(async ({ mode, folder }) => {
+  if (restoreDraft()) return;
   try {
     if (mode === 'blank') {
       blankDoc();
