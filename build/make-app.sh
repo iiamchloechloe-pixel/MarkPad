@@ -6,7 +6,8 @@ cd "$(dirname "$0")/.."
 
 # Override SRC_APP to build for a different arch (e.g. an unzipped arm64 Electron.app)
 SRC=${SRC_APP:-node_modules/electron/dist/Electron.app}
-APP=dist/MarkPad.app
+APP=${APP_OUTPUT:-dist/MarkPad.app}
+case "$APP" in dist/*.app) ;; *) echo 'APP_OUTPUT must be a .app inside dist/'; exit 1;; esac
 PB=/usr/libexec/PlistBuddy
 VER=$(node -p "require('./package.json').version")
 
@@ -48,7 +49,7 @@ echo "▸ app code (runtime deps only)"
 RES="$APP/Contents/Resources/app"
 rm -rf "$RES"; mkdir -p "$RES/node_modules/@highlightjs"
 cp main.js preload.js package.json "$RES/"
-cp build/dock-icon.png "$RES/icon.png"
+cp icon.png "$RES/icon.png"
 cp -R renderer "$RES/"
 cp -R node_modules/marked "$RES/node_modules/"
 cp -R node_modules/dompurify "$RES/node_modules/"
