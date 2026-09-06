@@ -1,0 +1,60 @@
+// Run with: node_modules/.bin/electron tests/smoke.cjs
+const { app, BrowserWindow, ipcMain } = require('electron');
+const path = require('path');
+const fs = require('fs');
+const assert = require('assert/strict');
+const profile = fs.mkdtempSync(path.join(require('os').tmpdir(), 'markpad-test-'));
+app.setPath('userData', profile);
+let answer = 'cancel', saved = '', disk = '', saveAsCount = 0;
+ipcMain.handle('dialog:confirmUnsaved', () => answer);
+ipcMain.handle('file:read', () => disk);
+ipcMain.handle('file:save', (_e, data) => { saved = data.content; disk = saved; return { filePath: data.filePath }; });
+ipcMain.handle('dialog:saveAs', (_e, data) => { saveAsCount++; return null; });
+ipcMain.handle('recent:list', () => ['/tmp/first.md', '/tmp/second.md']);
+ipcMain.on('window:close', () => {});
+app.whenReady().then(async () => {
+  const win = new BrowserWindow({show:false,webPreferences:{preload:path.resolve('preload.js'),contextIsolation:true,nodeIntegration:false}});
+  win.webContents.on('console-message', (_e, _level, message) => console.log('renderer:', message));
+  const run = code => win.webContents.executeJavaScript(code, true).catch(err => { console.error('Failed script:', code); throw err; });
+  try {
+    await win.loadFile(path.resolve('renderer/index.html'));
+    await run(`loadContent('/tmp/test.md', ${JSON.stringify('猫 **cat** cat\n\ncat')}); openFind(); document.querySelector('#find-input').value='cat'; doFind();`);
+    assert.equal(await run('findMatches'), 3);
+    await run(`doFind(true,true); document.querySelector('#replace-input').value='$&'; replaceOne();`);
+    assert.equal(await run('editor.getMarkdown()'), '猫 **cat** $&\n\ncat');
+    await run(`document.querySelector('#replace-input').value='dog'; replaceAll();`);
+    assert.equal(await run('editor.getMarkdown()'), '猫 **dog** $&\n\ndog');
+    await run(`editor.exec('undo')`);
+    assert.equal(await run('editor.getMarkdown()'), '猫 **cat** $&\n\ncat');
+    assert.equal(await run('guard()'), false);
+    answer = 'save'; disk = await run('savedMarkdown');
+    assert.equal(await run('save()'), true);
+    assert.ok(saved.includes('$&'));
+    await run(`editor.insertText('draft'); persistDraft()`);
+    assert.ok(await run(`JSON.parse(localStorage.getItem('markpad-draft')).content.includes('draft')`));
+    // Simulate a lost process: bypass normal close/save handling, keep storage.
+    await run('closeApproved = true');
+    const reloaded = new Promise(resolve => win.webContents.once('did-finish-load', resolve));
+    win.reload(); await reloaded;
+    assert.equal(await run('restoreDraft()'), true);
+    assert.equal(await run('dirty'), true);
+    answer = 'cancel';
+    win.webContents.send('file-opened', {filePath:'/tmp/other.md', content:'other file'});
+    await new Promise(resolve => setTimeout(resolve, 150));
+    assert.equal(await run('filePath'), '/tmp/test.md');
+    win.close();
+    await new Promise(resolve => setTimeout(resolve, 150));
+    assert.equal(win.isDestroyed(), false);
+    disk = 'external modification';
+    assert.equal(await run('save()'), false);
+    assert.equal(saveAsCount, 1);
+    await run(`openQuick()`);
+    assert.equal(await run('filteredFiles.length'), 2);
+    await run(`document.querySelector('#quick-query').value='second'; drawQuickFiles()`);
+    assert.equal(await run('filteredFiles[0]'), '/tmp/second.md');
+    await run(`writing.size=22; writing.line=2; applyWriting()`);
+    assert.equal(await run(`getComputedStyle(document.querySelector('.toastui-editor-contents')).fontSize`), '22px');
+    console.log('PASS: search positions, literal replacement, undo, save/cancel, draft recovery, external conflict, quick search, writing settings');
+    win.destroy(); app.exit(0);
+  } catch (err) { console.error(err); win.destroy(); app.exit(1); }
+});
